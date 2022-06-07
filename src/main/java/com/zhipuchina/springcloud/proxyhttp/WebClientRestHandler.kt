@@ -7,6 +7,8 @@ import com.zhipuchina.springcloud.proxyhttp.beans.ServerInfo
 import com.zhipuchina.springcloud.proxyhttp.interfaces.RestHandler
 import org.springframework.cloud.client.loadbalancer.reactive.LoadBalancedExchangeFilterFunction
 import org.springframework.http.MediaType
+import org.springframework.http.codec.json.Jackson2JsonDecoder
+import org.springframework.http.codec.json.Jackson2JsonEncoder
 import org.springframework.web.reactive.function.client.ExchangeStrategies
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.util.UriComponentsBuilder
@@ -20,7 +22,12 @@ class WebClientRestHandler(
     private val objectMapper: ObjectMapper
 ) : RestHandler {
 
-    private val webClient = WebClient.create()
+    private val webClient : WebClient = WebClient.builder().codecs {
+        it.defaultCodecs().jackson2JsonDecoder(Jackson2JsonDecoder(objectMapper).apply {
+            maxInMemorySize = -1
+        })
+        it.defaultCodecs().jackson2JsonEncoder(Jackson2JsonEncoder(objectMapper))
+    }.build()
     private val loadBalancedClient = lbFunction?.let { WebClient.builder().filter(it).build() } ?: webClient
 
     /**
@@ -33,6 +40,7 @@ class WebClientRestHandler(
             }
             loadBalancedClient
         } else webClient
+
         // BaseCodecConfigurer 增加自定义
         //增加处理策略
         val strategy = ExchangeStrategies.builder().codecs {
@@ -62,6 +70,7 @@ class WebClientRestHandler(
             .accept(*backContentType)
         //发出请求
         var fullRequest = methodInfo.body?.let {
+            //val bodyStr = objectMapper.writeValueAsString(it.cache().block())
             request.body(it, methodInfo.bodyElementType!!)
         } ?: request
 
@@ -85,25 +94,27 @@ class WebClientRestHandler(
         }
 
         //处理body
-        return if (MediaType.APPLICATION_JSON in backContentType) {
+         //if (MediaType.APPLICATION_JSON in backContentType) {
             // 先转String 是为了应对 text/html 却传回json字符串的请求
-            if (methodInfo.isReturnFlux) {
-                retrieve.bodyToMono(String::class.java).map {
-                    transitionList(methodInfo, it)
-                }.flatMapMany { Flux.fromIterable(it as MutableIterable<*>) }
+//            if (methodInfo.isReturnFlux) {
+//                retrieve.bodyToMono(String::class.java).map {
+//                    transitionList(methodInfo, it)
+//                }.flatMapMany { Flux.fromIterable(it as MutableIterable<*>) }
+//                retrieve.bodyToFlux(methodInfo.returnElementType as Class<*>)
+//            } else {
+//                retrieve.bodyToMono(String::class.java).map {
+//                    //println(it)
+//                    transition(methodInfo, it)
+//                }
+//            }
+//        } else {
+        //todo 应对 text/html 却传回json字符串的请求 应该修复内容协商器
+        return if (methodInfo.isReturnFlux) {
+                retrieve.bodyToFlux(methodInfo.returnElementType as Class<*>)
             } else {
-                retrieve.bodyToMono(String::class.java).map {
-                    //println(it)
-                    transition(methodInfo, it)
-                }
+                retrieve.bodyToMono(methodInfo.returnElementType as Class<*>)
             }
-        } else {
-            if (methodInfo.isReturnFlux) {
-                retrieve.bodyToFlux(String::class.java)
-            } else {
-                retrieve.bodyToMono(String::class.java)
-            }
-        }
+       // }
     }
 
     private fun getMediaTypes(contextType: Array<String>) =

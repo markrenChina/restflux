@@ -18,5 +18,6 @@ fun main(args: Array<String>) {
     val applicationContext: ConfigurableApplicationContext = runApplication<TestApplication>(*args)
     val api = applicationContext.getBean(HeavyMetalNewApi::class.java)
     api.patch().collectList().block()?.stream()?.forEach(System.out::println)
-    api.updateParam(TestPojo()).block()?.let { println(it) }
+    //api.updateParam(TestPojo()).block()?.let { println(it) }
+    println()
 }
