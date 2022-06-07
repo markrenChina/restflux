@@ -2,6 +2,7 @@ package com.zhipuchina.springcloud.proxyhttp
 
 import com.fasterxml.jackson.databind.JavaType
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.type.TypeFactory
 import com.zhipuchina.springcloud.proxyhttp.beans.MethodInfo
 import com.zhipuchina.springcloud.proxyhttp.beans.ServerInfo
 import com.zhipuchina.springcloud.proxyhttp.interfaces.RestHandler
@@ -92,29 +93,36 @@ class WebClientRestHandler(
                 retrieve = it.invoke(retrieve)
             }
         }
+        /*
+         return if (MediaType.APPLICATION_JSON in backContentType) {
+            // 先转String 是为了应对 text/html 却传回json字符串的请求
+            if (methodInfo.isReturnFlux) {
+                retrieve.bodyToMono(String::class.java).map {
+                    transitionList(methodInfo, it)
+                }.flatMapMany {
+                    Flux.fromIterable(it as MutableIterable<*>)
+                }
+            } else {
+                retrieve.bodyToMono(String::class.java).map {
+                    transition(methodInfo, it)
+                }
+            }
+        } else {
+            if (methodInfo.isReturnFlux) {
+                retrieve.bodyToFlux(String::class.java)
+            } else {
+                retrieve.bodyToMono(String::class.java)
+            }
+        }
+         */
 
         //处理body
-         //if (MediaType.APPLICATION_JSON in backContentType) {
-            // 先转String 是为了应对 text/html 却传回json字符串的请求
-//            if (methodInfo.isReturnFlux) {
-//                retrieve.bodyToMono(String::class.java).map {
-//                    transitionList(methodInfo, it)
-//                }.flatMapMany { Flux.fromIterable(it as MutableIterable<*>) }
-//                retrieve.bodyToFlux(methodInfo.returnElementType as Class<*>)
-//            } else {
-//                retrieve.bodyToMono(String::class.java).map {
-//                    //println(it)
-//                    transition(methodInfo, it)
-//                }
-//            }
-//        } else {
         //todo 应对 text/html 却传回json字符串的请求 应该修复内容协商器
         return if (methodInfo.isReturnFlux) {
-                retrieve.bodyToFlux(methodInfo.returnElementType as Class<*>)
+                retrieve.bodyToFlux(TypeFactory.rawClass(methodInfo.returnElementType))
             } else {
-                retrieve.bodyToMono(methodInfo.returnElementType as Class<*>)
+                retrieve.bodyToMono(TypeFactory.rawClass(methodInfo.returnElementType))
             }
-       // }
     }
 
     private fun getMediaTypes(contextType: Array<String>) =

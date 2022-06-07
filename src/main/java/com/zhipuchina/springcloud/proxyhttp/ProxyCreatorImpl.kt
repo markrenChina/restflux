@@ -103,10 +103,15 @@ class ProxyCreatorImpl(
                     val params = LinkedMultiValueMap<String, String>()
                     for (index in parameters.indices) {
                         //是否带@PathVariable
+                        //now parameters can't get arg name
                         val aPath = parameters[index].getAnnotation(PathVariable::class.java)
                         aPath?.let {
-                            val pathName = if (it.value == "") parameters[index].name else it.value
-                            methodInfo.uri = methodInfo.uri.replace("{$pathName}", args[index].toString())
+                            if (it.value == "") {
+                                val pathName =  Regex("\\{(.+?)\\}")
+                                methodInfo.uri = methodInfo.uri.replace(pathName, args[index].toString())
+                            } else {
+                                methodInfo.uri = methodInfo.uri.replace("{${it.value}}", args[index].toString())
+                            }
                         }
                         //是否带@RequestParam
                         val aParam = parameters[index].getAnnotation(RequestParam::class.java)
