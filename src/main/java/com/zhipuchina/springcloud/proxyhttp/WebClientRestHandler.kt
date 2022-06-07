@@ -24,9 +24,9 @@ class WebClientRestHandler(
 ) : RestHandler {
 
     private val webClient : WebClient = WebClient.builder().codecs {
-        it.defaultCodecs().jackson2JsonDecoder(Jackson2JsonDecoder(objectMapper).apply {
-            maxInMemorySize = -1
-        })
+//        it.defaultCodecs().jackson2JsonDecoder(Jackson2JsonDecoder(objectMapper).apply {
+//            maxInMemorySize = -1
+//        })
         it.defaultCodecs().jackson2JsonEncoder(Jackson2JsonEncoder(objectMapper))
     }.build()
     private val loadBalancedClient = lbFunction?.let { WebClient.builder().filter(it).build() } ?: webClient
@@ -93,7 +93,6 @@ class WebClientRestHandler(
                 retrieve = it.invoke(retrieve)
             }
         }
-        /*
          return if (MediaType.APPLICATION_JSON in backContentType) {
             // 先转String 是为了应对 text/html 却传回json字符串的请求
             if (methodInfo.isReturnFlux) {
@@ -114,15 +113,14 @@ class WebClientRestHandler(
                 retrieve.bodyToMono(String::class.java)
             }
         }
-         */
 
         //处理body
         //todo 应对 text/html 却传回json字符串的请求 应该修复内容协商器
-        return if (methodInfo.isReturnFlux) {
-                retrieve.bodyToFlux(TypeFactory.rawClass(methodInfo.returnElementType))
-            } else {
-                retrieve.bodyToMono(TypeFactory.rawClass(methodInfo.returnElementType))
-            }
+//        return if (methodInfo.isReturnFlux) {
+//                retrieve.bodyToFlux(methodInfo.returnElementType as Class<*>)
+//            } else {
+//                retrieve.bodyToMono(methodInfo.returnElementType as Class<*>)
+//            }
     }
 
     private fun getMediaTypes(contextType: Array<String>) =

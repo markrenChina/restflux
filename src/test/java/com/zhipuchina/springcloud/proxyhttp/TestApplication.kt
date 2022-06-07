@@ -17,7 +17,9 @@ class TestApplication {
 fun main(args: Array<String>) {
     val applicationContext: ConfigurableApplicationContext = runApplication<TestApplication>(*args)
     val api = applicationContext.getBean(HeavyMetalNewApi::class.java)
-    api.patch().collectList().block()?.stream()?.forEach(System.out::println)
-    //api.updateParam(TestPojo()).block()?.let { println(it) }
-    println()
+    runCatching {
+        //api.patch().collectList().block()?.stream()?.forEach(System.out::println)
+        api.updateParam(TestPojo()).block()?.let { println(it) }
+        //api.getBatchNumList("TEST1").block()?.message?.stream()?.forEach(System.out::println)
+    }.exceptionOrNull()?.printStackTrace()
 }

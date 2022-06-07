@@ -1,19 +1,19 @@
 package com.zhipuchina.springcloud.proxyhttp
 
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.PutMapping
-import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.*
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 
 @ApiServer(
-    "http://192.168.1.255:8080",
+    "http://127.0.0.1:20103/g1/h/hmn",
     isLoadBalanced = false,
     beforeInterceptor = [DebugBeforeInterceptor::class],
     afterInterceptor = [DebugAfterInterceptor::class]
 )
 interface HeavyMetalNewApi {
+
+    @GetMapping("/paramSetting2/{batchNum}")
+    fun getBatchNumList(@PathVariable(value = "batchNum") batchNum: String): Mono<ResultV1<List<ParamSetting2>>>
 
     @GetMapping("/paramSetting2/")
     fun patch(): Flux<BatchNumNewest>
